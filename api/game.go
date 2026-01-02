@@ -90,6 +90,9 @@ func botLoop(g *Game) {
 }
 
 func (g *Game) makeMove(playerNum int, column int) {
+	g.Mu.Lock()
+	defer g.Mu.Unlock()
+
 	for i := 5; i >= 0; i-- {
 		if g.Board[i][column] == 0 {
 			g.Board[i][column] = playerNum
@@ -116,16 +119,20 @@ func (g *Game) isValidMove(column int) bool { return true }
 
 func (g *Game) sendGameState(p1, p2 *Player) {
 	if !p1.IsBot {
+		p1.WriteMu.Lock()
 		p1.Conn.WriteJSON(Message{
 			Type: "state",
 			Data: g,
 		})
+		p1.WriteMu.Unlock()
 	}
 
 	if !p2.IsBot {
+		p2.WriteMu.Lock()
 		p2.Conn.WriteJSON(Message{
 			Type: "state",
 			Data: g,
 		})
+		p2.WriteMu.Unlock()
 	}
 }

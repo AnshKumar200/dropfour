@@ -1,12 +1,18 @@
 package main
 
-import "github.com/gorilla/websocket"
+import (
+	"sync"
+
+	"github.com/gorilla/websocket"
+)
 
 type Player struct {
 	ID string
 	Name string
 	Conn *websocket.Conn
 	IsBot bool
+
+	WriteMu sync.Mutex
 }
 
 type Game struct {
@@ -14,6 +20,8 @@ type Game struct {
 	Turn int
 	Players [2]*Player
 	Over bool
+
+	Mu sync.Mutex
 }
 
 type Move struct {

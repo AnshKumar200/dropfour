@@ -37,17 +37,18 @@ func registerPlayer(p *Player) {
 	queue = append(queue, p)
 	mu.Unlock()
 
-//	go waitForMatch(p)
-	p2 := &Player{
-		ID: "TestUser",
-		Name: "test12",
-		IsBot: true,
-	} 
-	startGame(p, p2)
+	go waitForMatch(p)
+
+//	p2 := &Player{
+//		ID: "TestUser",
+//		Name: "test12",
+//		IsBot: true,
+//	} 
+//	startGame(p, p2)
 }
 
 func waitForMatch(p *Player) {
-	timer := time.After(10 * time.Second)
+	timer := time.After(10000000 * time.Second) // for testing
 
 	for {
 		select {

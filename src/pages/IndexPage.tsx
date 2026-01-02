@@ -21,7 +21,6 @@ export default function IndexPage() {
         }
 
         if(msg.type === "state" || msg.type === "resume") {
-            console.log("recieved game state: ", msg.data)
             setGameState(msg.data)
             setInGame(true)
         }

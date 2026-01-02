@@ -5,17 +5,15 @@ type Props = {
 }
 
 export default function Game({ state }: Props) {
-    console.log(state)
     return (
         <div>
             <div>turn: {state.Turn}</div>
             
             {state.Board.map((row: any[], r: number) => (
-                <div key={r}>
+                <div key={r} className="flex">
                     {row.map((cell, c: number) => (
-                        <button key={c} onClick={() => sendMove(c)}>
-                            {cell === 0 ? "0" : cell === 1 ? "1" : "2"}
-                        </button>
+                        <div key={c} onClick={() => sendMove(c)} className={`${cell === 0 ? "bg-white" : cell === 1 ? "bg-blue-500" : "bg-red-500"} size-5 border-2 rounded-full`}>
+                        </div>
                     ))}
                 </div>
             ))}
