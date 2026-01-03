@@ -11,7 +11,7 @@ export function connectWS(
     if (name) params.set("name", name)
     if (token) params.set("token", token)
 
-    socket = new WebSocket(`ws://${WS_URL}/ws?${params}`)
+    socket = new WebSocket(`wss://${WS_URL}/ws?${params}`)
 
     socket.onopen = () => {
         console.log("connected to ws")
