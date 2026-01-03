@@ -8,5 +8,6 @@ export type GameState = {
     Board: number[][];
     Turn: number;
     Players: any;
+    Winner: number;
     Over: boolean;
 }

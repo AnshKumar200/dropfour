@@ -30,3 +30,12 @@ export function sendMove(column: number) {
         })
     )
 }
+
+export function joinQueue() {
+    if(!socket) return;
+    socket.send(
+        JSON.stringify({
+            type: "queue"
+        })
+    )
+}

@@ -19,6 +19,7 @@ type Game struct {
 	Board [6][7]int
 	Turn int
 	Players [2]*Player
+	Winner int
 	Over bool
 
 	Mu sync.Mutex
@@ -30,5 +31,5 @@ type Move struct {
 
 type Message struct {
 	Type string `json:"type"`
-	Data interface{} `json:"data"`
+	Data any `json:"data"`
 }

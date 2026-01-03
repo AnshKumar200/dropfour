@@ -27,15 +27,15 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		Conn: conn,
 	}
 
-	fmt.Println(player)
-
-	registerPlayer(player)
+	addToQueue(player)
 }
 
-func registerPlayer(p *Player) {
+func addToQueue(p *Player) {
 	mu.Lock()
 	queue = append(queue, p)
 	mu.Unlock()
+	
+	fmt.Println("player is added: ", p.Name)
 
 	go waitForMatch(p)
 
