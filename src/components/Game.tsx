@@ -11,7 +11,14 @@ export default function Game({ state }: Props) {
     const [timeLeft, setTimeLeft] = useState(TURN_TIME);
     const [inQueue, setInQueue] = useState(false)
 
+    useEffect(() => {
+        if (!state.Over) {
+            setInQueue(false)
+        }
+    }, [state.Over])
+
     function handleQueue() {
+        if (inQueue) return
         setInQueue(true)
         gameJoinQueue()
     }
@@ -53,8 +60,8 @@ export default function Game({ state }: Props) {
                 ) : (
                     <div>Draw</div>
                 )}
-                    <button onClick={handleQueue} className="px-5 py-2 bg-black text-white rounded-xl">Play Again</button>
-                    {inQueue && <div>you are in queue!</div>}
+                <button onClick={handleQueue} className="px-5 py-2 bg-black text-white rounded-xl">Play Again</button>
+                {inQueue && <div>you are in queue!</div>}
             </div>}
         </div>
     )

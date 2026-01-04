@@ -92,8 +92,6 @@ func addToQueue(p *Player) {
 	queue = append(queue, p)
 	mu.Unlock()
 
-	fmt.Println("player is added: ", p.Name)
-
 	go waitForMatch(p)
 }
 
