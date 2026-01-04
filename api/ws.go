@@ -98,7 +98,7 @@ func addToQueue(p *Player) {
 }
 
 func waitForMatch(p *Player) {
-	timer := time.After(10000000 * time.Second) // for testing, 10
+	timer := time.After(10 * time.Second)
 
 	for {
 		select {
@@ -144,7 +144,7 @@ func listenLobby(p *Player) {
 			if err != nil {
 				log.Println("leaderboard failed: ", err)
 				continue
-			}	
+			}
 			p.WriteMu.Lock()
 			p.Conn.WriteJSON(Message{
 				Type: "leaderboard",

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"time"
 )
@@ -85,6 +84,7 @@ func monitorTimeout(g *Game) {
 }
 
 func startGameWithBot(p *Player) {
+	log.Println("bot was here ---- ")
 	bot := &Player{
 		ID:    "BOT",
 		Name:  "BOT",
@@ -114,6 +114,18 @@ func listenMove(g *Game, p *Player, playerNum int) {
 			if g.Turn == playerNum && g.isValidMove(column) {
 				g.makeMove(playerNum, column)
 			}
+		case "leaderboard":
+			data, err := leaderboardData()
+			if err != nil {
+				log.Println("leaderboard failed: ", err)
+				continue
+			}
+			p.WriteMu.Lock()
+			p.Conn.WriteJSON(Message{
+				Type: "leaderboard",
+				Data: data,
+			})
+			p.WriteMu.Unlock()
 		case "game_queue":
 			leaveGame(g, p)
 			addToQueue(p)
@@ -177,7 +189,6 @@ func (g *Game) checkWinner(row, col, player int) bool {
 		count += g.countDir(row, col, -d[0], -d[1], player)
 
 		if count >= 4 {
-			fmt.Println("winner is :", player)
 			return true
 		}
 	}

@@ -54,7 +54,7 @@ export function sendMove(column: number) {
 }
 
 export function joinQueue() {
-    if (!connected || !socket) return;
+    if (!socket) return;
     socket.send(
         JSON.stringify({
             type: "queue"

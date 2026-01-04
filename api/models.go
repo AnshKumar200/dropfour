@@ -48,3 +48,25 @@ type Message struct {
 	Type string `json:"type"`
 	Data any `json:"data"`
 }
+
+func (g *Game) clone() *Game {
+	newG := &Game{
+		Turn: g.Turn,
+	}
+	for r := range 6 {
+		for c := range 7 {
+			newG.Board[r][c] = g.Board[r][c]
+		}
+	}
+	return newG
+}
+
+func (g *Game) simulateMove(col int, player int) int {
+	for r := 5; r >= 0; r-- {
+		if g.Board[r][col] == 0 {
+			g.Board[r][col] = player
+			return r
+		}
+	}
+	return -1
+}

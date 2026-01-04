@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { joinQueue, sendMove } from "../ws";
+import { gameJoinQueue, sendMove } from "../ws";
 
 type Props = {
     state: any;
@@ -9,6 +9,12 @@ const TURN_TIME = 30;
 
 export default function Game({ state }: Props) {
     const [timeLeft, setTimeLeft] = useState(TURN_TIME);
+    const [inQueue, setInQueue] = useState(false)
+
+    function handleQueue() {
+        setInQueue(true)
+        gameJoinQueue()
+    }
 
     useEffect(() => {
         if (!state.LastMoveTime || state.Over) return;
@@ -36,7 +42,7 @@ export default function Game({ state }: Props) {
             {state.Board.map((row: any[], r: number) => (
                 <div key={r} className="flex">
                     {row.map((cell, c: number) => (
-                        <div key={c} onClick={() => sendMove(c)} className={`${cell === 0 ? "bg-white" : cell === 1 ? "bg-blue-500" : "bg-red-500"} size-5 border-2 rounded-full`}>
+                        <div key={c} onClick={() => sendMove(c)} className={`${cell === 0 ? "bg-white" : cell === 1 ? "bg-blue-500" : "bg-red-500"} size-8 border-2 rounded-full`}>
                         </div>
                     ))}
                 </div>
@@ -47,7 +53,8 @@ export default function Game({ state }: Props) {
                 ) : (
                     <div>Draw</div>
                 )}
-                <button onClick={joinQueue}>Play Again</button>
+                    <button onClick={handleQueue} className="px-5 py-2 bg-black text-white rounded-xl">Play Again</button>
+                    {inQueue && <div>you are in queue!</div>}
             </div>}
         </div>
     )

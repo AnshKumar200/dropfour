@@ -47,7 +47,7 @@ export default function IndexPage() {
     }
 
     return (
-        <div className="flex gap-50">
+        <div className="flex gap-10">
             <div>
                 {!connected && <Lobby onStart={handleStart} />}
                 {connected && !inGame && (
