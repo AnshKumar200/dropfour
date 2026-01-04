@@ -23,7 +23,7 @@ export function connectWS(
         connected = true;
         console.log("connected to ws")
 
-        getLeaderboard()
+        getData()
     }
 
     socket.onmessage = (e) => {
@@ -71,11 +71,16 @@ export function gameJoinQueue() {
     )
 }
 
-export function getLeaderboard() {
+export function getData() {
     if (!connected || !socket) return;
     socket.send(
         JSON.stringify({
             type: "leaderboard"
+        })
+    )
+    socket.send(
+        JSON.stringify({
+            type: "games"
         })
     )
 }

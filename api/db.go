@@ -49,14 +49,16 @@ func storeResult(g *Game) {
 	}
 	defer tx.Rollback(ctx)
 
-	_, err = tx.Exec(ctx, `insert into games (player1_id, player2_id, winner) values ($1, $2, $3)`, g.Players[0].ID, g.Players[1].ID, g.Winner)
+	_, err = tx.Exec(ctx, `insert into games (player1_id, player2_id, winner) values ($1, $2, $3)`, g.Players[0].Name, g.Players[1].Name, g.Winner)
 	if err != nil {
 		log.Println("inset game failed: ", err)
 		return
 	}
 
 	for _, p := range g.Players {
-		if p.IsBot { continue }
+		if p.IsBot {
+			continue
+		}
 
 		_, err = tx.Exec(ctx, `insert into players (id, name, wins) values ($1, $2, 0) on conflict (id) do update set name = excluded.name`, p.ID, p.Name)
 		if err != nil {
@@ -83,7 +85,7 @@ func leaderboardData() ([]LeaderboardEntry, error) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	
+
 	rows, err := DB.Query(ctx, `select name, wins from players order by wins desc limit 10`)
 	if err != nil {
 		return nil, err
@@ -100,4 +102,29 @@ func leaderboardData() ([]LeaderboardEntry, error) {
 	}
 
 	return leaderboard, nil
+}
+
+func gamesData() ([]GamesEntry, error) {
+	if DB == nil {
+		return nil, nil
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := DB.Query(ctx, `select player1_id, player2_id, winner from games order by created_at desc limit 5`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var games []GamesEntry
+	for rows.Next() {
+		var e GamesEntry
+		if err := rows.Scan(&e.Player1, &e.Player2, &e.Winner); err != nil {
+			return nil, err
+		}
+		games = append(games, e)
+	}
+
+	return games, nil
 }

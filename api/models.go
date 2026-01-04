@@ -40,6 +40,12 @@ type LeaderboardEntry struct {
 	Wins int
 }
 
+type GamesEntry struct {
+	Player1 string
+	Player2 string
+	Winner int
+}
+
 type Move struct {
 	Column int `json:"column"`
 }

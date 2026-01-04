@@ -84,7 +84,6 @@ func monitorTimeout(g *Game) {
 }
 
 func startGameWithBot(p *Player) {
-	log.Println("bot was here ---- ")
 	bot := &Player{
 		ID:    "BOT",
 		Name:  "BOT",
@@ -123,6 +122,18 @@ func listenMove(g *Game, p *Player, playerNum int) {
 			p.WriteMu.Lock()
 			p.Conn.WriteJSON(Message{
 				Type: "leaderboard",
+				Data: data,
+			})
+			p.WriteMu.Unlock()
+		case "games":
+			data, err := gamesData()
+			if err != nil {
+				log.Println("games failed: ", err)
+				continue
+			}
+			p.WriteMu.Lock()
+			p.Conn.WriteJSON(Message{
+				Type: "games",
 				Data: data,
 			})
 			p.WriteMu.Unlock()

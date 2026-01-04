@@ -97,6 +97,16 @@ func addToQueue(p *Player) {
 	go waitForMatch(p)
 }
 
+func removeFromQueue(p *Player) bool {
+	for i, qp := range queue {
+		if qp == p {
+			queue = append(queue[:i], queue[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
+
 func waitForMatch(p *Player) {
 	timer := time.After(10 * time.Second)
 
@@ -104,9 +114,12 @@ func waitForMatch(p *Player) {
 		select {
 		case <-timer:
 			mu.Lock()
-			queue = queue[1:]
-			mu.Unlock()
-			startGameWithBot(p)
+			if removeFromQueue(p) {
+				mu.Unlock()
+				startGameWithBot(p)
+			} else {
+				mu.Unlock()
+			}
 			return
 		default:
 			mu.Lock()
@@ -122,7 +135,6 @@ func waitForMatch(p *Player) {
 			mu.Unlock()
 			time.Sleep(200 * time.Millisecond)
 		}
-
 	}
 }
 
@@ -148,6 +160,18 @@ func listenLobby(p *Player) {
 			p.WriteMu.Lock()
 			p.Conn.WriteJSON(Message{
 				Type: "leaderboard",
+				Data: data,
+			})
+			p.WriteMu.Unlock()
+		case "games":
+			data, err := gamesData()
+			if err != nil {
+				log.Println("games failed: ", err)
+				continue
+			}
+			p.WriteMu.Lock()
+			p.Conn.WriteJSON(Message{
+				Type: "games",
 				Data: data,
 			})
 			p.WriteMu.Unlock()
