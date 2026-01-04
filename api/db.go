@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"os"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -12,7 +13,7 @@ var DB *pgxpool.Pool
 
 func conncetDB() {
 	log.Println("started the conn to db")
-	dsn := "postgresql://postgres:ansh@737123@db.wjaxemwxskeikwzrunkh.supabase.co:5432/postgres"
+	dsn := os.Getenv("DATABASE_URL")
 
 	config, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
