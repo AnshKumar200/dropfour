@@ -3,7 +3,10 @@ import IndexPage from './IndexPage'
 
 function App() {
     return (
-        <IndexPage />
+        <div>
+            <div className='text-2xl'>DropFour</div>
+            <IndexPage />
+        </div>
     )
 }
 

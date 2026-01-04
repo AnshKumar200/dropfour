@@ -34,7 +34,7 @@ export default function Game({ state }: Props) {
 
 
     return (
-        <div>
+        <div className="text-nowrap">
             <div>Player 1: {state.Players[0].Name} V/S Player 2: {state.Players[1].Name}</div>
             <div>Turn: Player {state.Turn}</div>
             <div>Time Left: {timeLeft}s</div>

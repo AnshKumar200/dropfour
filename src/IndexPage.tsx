@@ -50,7 +50,7 @@ export default function IndexPage() {
     }
 
     function handleUpdate() {
-       getData() 
+        getData()
     }
 
     return (

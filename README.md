@@ -4,6 +4,8 @@ DropFour is a two-player strategy game where players take turns dropping tokens 
 https://dropfour.vercel.app/
 ( Note - Back-end is deployed on a free tier service. It might take a few seconds to start the server )
 
+![preview image](image.png)
+
 ## Tech Stack
 - Front-end - React
 - Back-end - GoLang
