@@ -2,6 +2,7 @@ package main
 
 import (
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -21,8 +22,22 @@ type Game struct {
 	Players [2]*Player
 	Winner int
 	Over bool
+	LastMoveTime int64
 
 	Mu sync.Mutex
+}
+
+type GameResult struct {
+	ID string
+	Player1 string
+	Player2 string
+	Winner int
+	EndedAt time.Time
+}
+
+type LeaderboardEntry struct {
+	Name string
+	Wins int
 }
 
 type Move struct {

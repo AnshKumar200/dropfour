@@ -1,7 +1,9 @@
 export type Message = 
-| { type: "start"; data: { player: number, token: string } }
+| { type: "token"; data: string }
+| { type: "start"; }
 | { type: "state"; data: GameState }
 | { type: "resume"; data: GameState }
+| { type: "leaderboard"; data: LeaderboardData[] }
 | { type: "end"; data: { winner: number } }
 
 export type GameState = {
@@ -10,4 +12,10 @@ export type GameState = {
     Players: any;
     Winner: number;
     Over: boolean;
+    LastMoveTime: number;
+}
+
+export type LeaderboardData = {
+    Name: string;
+    Wins: number;
 }

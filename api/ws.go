@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"sync"
 	"time"
@@ -13,6 +14,12 @@ import (
 var queue []*Player
 var mu sync.Mutex
 
+var players = make(map[string]*Player)
+var playersMU sync.Mutex
+
+var activeGames = make(map[string]*Game)
+var activeGamesMu sync.Mutex
+
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
 }
@@ -20,39 +27,85 @@ var upgrader = websocket.Upgrader{
 func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("new conn")
 	conn, _ := upgrader.Upgrade(w, r, nil)
+	token := r.URL.Query().Get("token")
+	name := r.URL.Query().Get("name")
 
-	player := &Player{
-		ID: uuid.NewString(),
-		Name: r.URL.Query().Get("name"),
-		Conn: conn,
+	playersMU.Lock()
+	p, exists := players[token]
+	playersMU.Unlock()
+
+	if !exists {
+		if token == "" {
+			token = uuid.NewString()
+			conn.WriteJSON(Message{
+				Type: "token",
+				Data: token,
+			})
+		}
+		player := &Player{
+			ID:    token,
+			Name:  name,
+			Conn:  conn,
+			IsBot: false,
+		}
+		playersMU.Lock()
+		players[token] = player
+		playersMU.Unlock()
+
+		go listenLobby(player)
+	} else {
+		p.WriteMu.Lock()
+		p.Name = name
+		p.Conn = conn
+		p.WriteMu.Unlock()
+
+		activeGamesMu.Lock()
+		game, inGame := activeGames[token]
+		activeGamesMu.Unlock()
+
+		if inGame {
+			playerNum := 1
+			if game.Players[1].ID == p.ID {
+				playerNum = 2
+			}
+
+			p.Conn.WriteJSON(Message{
+				Type: "start",
+			})
+
+			p.WriteMu.Lock()
+			p.Conn.WriteJSON(Message{
+				Type: "state",
+				Data: game,
+			})
+			p.WriteMu.Unlock()
+
+			go listenMove(game, p, playerNum)
+		} else {
+			go listenLobby(p)
+		}
 	}
-
-	addToQueue(player)
 }
 
 func addToQueue(p *Player) {
 	mu.Lock()
 	queue = append(queue, p)
 	mu.Unlock()
-	
+
 	fmt.Println("player is added: ", p.Name)
 
 	go waitForMatch(p)
-
-//	p2 := &Player{
-//		ID: "TestUser",
-//		Name: "test12",
-//		IsBot: true,
-//	} 
-//	startGame(p, p2)
 }
 
 func waitForMatch(p *Player) {
-	timer := time.After(10000000 * time.Second) // for testing
+	timer := time.After(10000000 * time.Second) // for testing, 10
 
 	for {
 		select {
 		case <-timer:
+			mu.Lock()
+			queue = queue[1:]
+			mu.Unlock()
 			startGameWithBot(p)
 			return
 		default:
@@ -70,6 +123,35 @@ func waitForMatch(p *Player) {
 			time.Sleep(200 * time.Millisecond)
 		}
 
+	}
+}
+
+func listenLobby(p *Player) {
+	for {
+		var msg Message
+		err := p.Conn.ReadJSON(&msg)
+		if err != nil {
+			removePlayer(p)
+			return
+		}
+
+		switch msg.Type {
+		case "queue":
+			addToQueue(p)
+			return
+		case "leaderboard":
+			data, err := leaderboardData()
+			if err != nil {
+				log.Println("leaderboard failed: ", err)
+				continue
+			}	
+			p.WriteMu.Lock()
+			p.Conn.WriteJSON(Message{
+				Type: "leaderboard",
+				Data: data,
+			})
+			p.WriteMu.Unlock()
+		}
 	}
 }
 

@@ -1,15 +1,20 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"log"
+	"time"
+)
 
 func newGame(p1, p2 *Player) *Game {
 	g := &Game{
-		Turn:    1,
-		Players: [2]*Player{p1, p2},
+		Turn:         1,
+		Players:      [2]*Player{p1, p2},
+		LastMoveTime: time.Now().UnixMilli(),
 	}
 
-	for r := 0; r < 6; r++ {
-		for c := 0; c < 7; c++ {
+	for r := range 6 {
+		for c := range 7 {
 			g.Board[r][c] = 0
 		}
 	}
@@ -19,25 +24,26 @@ func newGame(p1, p2 *Player) *Game {
 func startGame(p1, p2 *Player) {
 	game := newGame(p1, p2)
 
+	activeGamesMu.Lock()
+	activeGames[p1.ID] = game
+	activeGames[p2.ID] = game
+	activeGamesMu.Unlock()
+
 	if !p1.IsBot {
 		p1.Conn.WriteJSON(Message{
 			Type: "start",
-			Data: map[string]any{
-				"player": 1,
-			},
 		})
 	}
 
 	if !p2.IsBot {
 		p2.Conn.WriteJSON(Message{
 			Type: "start",
-			Data: map[string]any{
-				"player": 2,
-			},
 		})
 	}
 
 	game.sendGameState(p1, p2)
+
+	go monitorTimeout(game)
 
 	go listenMove(game, p1, 1)
 
@@ -47,6 +53,35 @@ func startGame(p1, p2 *Player) {
 		go listenMove(game, p2, 2)
 	}
 
+}
+
+func monitorTimeout(g *Game) {
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		now := time.Now().UnixMilli()
+
+		g.Mu.Lock()
+		if g.Over {
+			g.Mu.Unlock()
+			return
+		}
+
+		if now-g.LastMoveTime >= 30_000 {
+			if g.Turn == 1 {
+				g.Winner = 2
+			} else {
+				g.Winner = 1
+			}
+			endGame(g)
+
+			g.sendGameState(g.Players[0], g.Players[1])
+			g.Mu.Unlock()
+			return
+		}
+		g.Mu.Unlock()
+	}
 }
 
 func startGameWithBot(p *Player) {
@@ -70,19 +105,20 @@ func listenMove(g *Game, p *Player, playerNum int) {
 
 		switch msg.Type {
 		case "move":
-			if g.Over { continue }
-			data := msg.Data.(map[string]interface{})
+			if g.Over {
+				continue
+			}
+			data := msg.Data.(map[string]any)
 			column := int(data["column"].(float64))
 
 			if g.Turn == playerNum && g.isValidMove(column) {
 				g.makeMove(playerNum, column)
 			}
-		case "queue":
-			fmt.Println("putting back in queue: ", p.Name)
+		case "game_queue":
 			leaveGame(g, p)
 			addToQueue(p)
 			return
-		}	
+		}
 	}
 }
 
@@ -108,12 +144,15 @@ func (g *Game) makeMove(playerNum int, column int) {
 		}
 	}
 
+	g.LastMoveTime = time.Now().UnixMilli()
+
 	if g.checkWinner(row, column, playerNum) {
-		g.Over = true
 		g.Winner = playerNum
-	}
-	
-	if !g.Over {
+		endGame(g)
+	} else if g.checkDraw() {
+		g.Winner = 0
+		endGame(g)
+	} else {
 		if g.Turn == 1 {
 			g.Turn = 2
 		} else {
@@ -122,7 +161,6 @@ func (g *Game) makeMove(playerNum int, column int) {
 	}
 
 	g.sendGameState(g.Players[0], g.Players[1])
-
 }
 
 func (g *Game) checkWinner(row, col, player int) bool {
@@ -153,7 +191,7 @@ func (g *Game) countDir(r, c, dr, dc, player int) int {
 	c += dc
 
 	for r >= 0 && r < 6 && c >= 0 && c < 7 && g.Board[r][c] == player {
-		cnt++;
+		cnt++
 		r += dr
 		c += dc
 	}
@@ -162,9 +200,22 @@ func (g *Game) countDir(r, c, dr, dc, player int) int {
 }
 
 func (g *Game) isValidMove(column int) bool {
-	if(g.Board[0][column] == 0) {
+	if g.Board[0][column] == 0 {
 		return true
-	} else { return false }
+	} else {
+		return false
+	}
+}
+
+func (g *Game) checkDraw() bool {
+	draw := true
+	for i := range 7 {
+		if g.Board[0][i] == 0 {
+			draw = false
+			break
+		}
+	}
+	return draw
 }
 
 func (g *Game) sendGameState(p1, p2 *Player) {
@@ -190,4 +241,18 @@ func (g *Game) sendGameState(p1, p2 *Player) {
 func leaveGame(g *Game, p *Player) {
 	g.Mu.Lock()
 	defer g.Mu.Unlock()
+}
+
+func endGame(g *Game) {
+	if g.Over {
+		return
+	}
+	g.Over = true
+
+	activeGamesMu.Lock()
+	delete(activeGames, g.Players[0].ID)
+	delete(activeGames, g.Players[1].ID)
+	activeGamesMu.Unlock()
+
+	go storeResult(g)
 }
